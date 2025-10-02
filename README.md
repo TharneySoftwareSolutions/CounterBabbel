@@ -1,5 +1,11 @@
 # CounterBabbel
-CounterBabbel è un'applicazione per la cattura schermo tramite DirectX11 e l'estrazione testi con OCR (Tesseract), con traduzione integrata tramite Google Translate API. Un client Windows Forms consente di impostare un intervallo di scansione e visualizzare i testi tradotti in tempo reale.
+CounterBabbel è traduttore simultaneo di porzioni di schermo.
+Ideale per tradurre rapidamente le chat di gioco.
+
+Attraverso DirectX11 un app server cattura una porzione dello schermo in seguito ad una chiamata HTTP.
+Tale chiamata esegue una scansione dello schermo e la passa ad una libreria di scansione OCR.
+
+Il client riceve quindi il testo dallo schermo, che si occuperà poi della traduzione.
 
 # Caratteristiche principali
 Cattura schermo in un'area selezionabile dall'utente
