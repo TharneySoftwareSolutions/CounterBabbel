@@ -1,3 +1,8 @@
+using System;
+using System.Linq;
+using System.Net.Http;
+using System.Windows.Forms;
+
 namespace CounterBabbelClient
 {
 	public partial class Main : Form
@@ -5,23 +10,86 @@ namespace CounterBabbelClient
 		private readonly HttpClient httpClient = new HttpClient();
 
 		private TextBox txtOriginal;
-		private TextBox txtTranslated;
+		private TextBox txtConsole;
+		private TrackBar trackBarDelay;
+		private Label labelDelay;
 		private Button btnTranslate;
+
+		private int delayMs = 1000;
+
 		public Main()
 		{
 			InitializeComponent();
 			this.Text = "OCR + Traduzione";
 
-			txtOriginal = new TextBox { Multiline = true, ScrollBars = ScrollBars.Vertical, Dock = DockStyle.Top, Height = 150 };
-			txtTranslated = new TextBox { Multiline = true, ScrollBars = ScrollBars.Vertical, Dock = DockStyle.Top, Height = 150 };
-			btnTranslate = new Button { Text = "Ottieni testo OCR e traduci", Dock = DockStyle.Top };
+			// Original text
+			txtOriginal = new TextBox
+			{
+				Multiline = true,
+				ScrollBars = ScrollBars.Vertical,
+				Dock = DockStyle.Top,
+				Height = 150,
+				ReadOnly = true
+			};
 
+			// Label to show delay value
+			labelDelay = new Label
+			{
+				Text = $"Delay: {delayMs} ms",
+				Dock = DockStyle.Top,
+				Height = 20,
+				TextAlign = System.Drawing.ContentAlignment.MiddleCenter
+			};
+
+			// TrackBar to select delay
+			trackBarDelay = new TrackBar
+			{
+				Minimum = 500,
+				Maximum = 5000,
+				TickFrequency = 500,
+				SmallChange = 100,
+				LargeChange = 500,
+				Value = delayMs,
+				Dock = DockStyle.Top
+			};
+			trackBarDelay.Scroll += TrackBarDelay_Scroll;
+
+			// Console-style TextBox for translated text
+			txtConsole = new TextBox
+			{
+				Multiline = true,
+				ScrollBars = ScrollBars.Vertical,
+				Dock = DockStyle.Fill,
+				ReadOnly = true,
+				BackColor = System.Drawing.Color.Black,
+				ForeColor = System.Drawing.Color.LimeGreen,
+				Font = new System.Drawing.Font("Consolas", 10)
+			};
+
+			btnTranslate = new Button
+			{
+				Text = "Ottieni testo OCR e traduci",
+				Dock = DockStyle.Top,
+				Height = 30,
+				BackColor = System.Drawing.Color.White,
+				Cursor = Cursors.Hand
+			};
 			btnTranslate.Click += BtnTranslate_Click;
 
-			this.Controls.Add(txtTranslated);
-			this.Controls.Add(txtOriginal);
+			// Add controls in order (top to bottom)
+			this.Controls.Add(txtConsole);
+			this.Controls.Add(trackBarDelay);
+			this.Controls.Add(labelDelay);
 			this.Controls.Add(btnTranslate);
+			this.Controls.Add(txtOriginal);
 		}
+
+		private void TrackBarDelay_Scroll(object sender, EventArgs e)
+		{
+			delayMs = trackBarDelay.Value;
+			labelDelay.Text = $"Delay: {delayMs} ms";
+		}
+
 		private async void BtnTranslate_Click(object sender, EventArgs e)
 		{
 			try
@@ -31,9 +99,13 @@ namespace CounterBabbelClient
 
 				txtOriginal.Text = ocrText;
 
-				// Traduci il testo (puoi sostituire con chiamata a API traduzione)
+				// Traduci il testo (qui inversione di esempio)
 				string translatedText = TranslateText(ocrText);
-				txtTranslated.Text = translatedText;
+
+				// Append al "console" con nuova linea
+				if (txtConsole.Text.Length > 0)
+					txtConsole.AppendText(Environment.NewLine);
+				txtConsole.AppendText(translatedText);
 			}
 			catch (Exception ex)
 			{
@@ -43,9 +115,9 @@ namespace CounterBabbelClient
 
 		private string TranslateText(string input)
 		{
-			// Qui puoi usare un'API di traduzione. Per esempio finta inversione testo:
 			if (string.IsNullOrWhiteSpace(input)) return "";
-			// Layout di esempio: sostituire con reale API
+
+			// Logica finta di traduzione, qui invertiamo il testo
 			return new string(input.Reverse().ToArray());
 		}
 	}

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Net;
 using System.Threading.Tasks;
@@ -54,6 +55,28 @@ namespace CounterBabbel
 			this.Load += Form1_Load;
 		}
 
+		public void KillOtherInstances()
+		{
+			var currentProcess = Process.GetCurrentProcess();
+			var allProcesses = Process.GetProcessesByName(currentProcess.ProcessName);
+
+			foreach (var proc in allProcesses)
+			{
+				if (proc.Id != currentProcess.Id)
+				{
+					try
+					{
+						proc.Kill();
+						proc.WaitForExit(5000); // attendi fino a 5 secondi
+					}
+					catch
+					{
+						// Ignora errori di accesso o kill fallito
+					}
+				}
+			}
+		}
+
 		private void Button1_Click(object? sender, EventArgs e)
 		{
 			if (!isListening)
@@ -68,7 +91,7 @@ namespace CounterBabbel
 
 		private void Form1_Load(object sender, EventArgs e)
 		{
-			// Inizializzazione eventuale all'avvio
+			KillOtherInstances();
 		}
 
 		protected override void OnPaint(PaintEventArgs e)
@@ -287,7 +310,7 @@ namespace CounterBabbel
 
 			return bmp;
 		}
-		
+
 		private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
 		{
 			if (isListening)
