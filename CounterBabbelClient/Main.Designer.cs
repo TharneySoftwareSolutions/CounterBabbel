@@ -1,6 +1,6 @@
-﻿namespace CounterBabbel
+﻿namespace CounterBabbelClient
 {
-	partial class Form1
+	partial class Main
 	{
 		/// <summary>
 		///  Required designer variable.
@@ -30,14 +30,13 @@
 		{
 			SuspendLayout();
 			// 
-			// Form1
+			// Main
 			// 
 			AutoScaleDimensions = new SizeF(7F, 15F);
 			AutoScaleMode = AutoScaleMode.Font;
-			ClientSize = new Size(800, 450);
-			ControlBox = false;
-			Name = "Form1";
-			Text = "Select area";
+			ClientSize = new Size(796, 476);
+			Name = "Main";
+			Text = "CounterBabbel";
 			ResumeLayout(false);
 		}
 

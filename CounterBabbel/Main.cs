@@ -8,7 +8,7 @@ using Tesseract;
 
 namespace CounterBabbel
 {
-	public partial class Form1 : Form
+	public partial class Main : Form
 	{
 		private HttpListener listener;
 
@@ -21,7 +21,9 @@ namespace CounterBabbel
 		private ICaptureZone captureZone;
 		private TesseractEngine ocrEngine;
 
-		public Form1()
+		private bool isListening = false;
+
+		public Main()
 		{
 			InitializeComponent();
 
@@ -54,11 +56,15 @@ namespace CounterBabbel
 
 		private void Button1_Click(object? sender, EventArgs e)
 		{
-			selectionRect = this.Bounds;
-			InitializeCapture();
-			StartListener();
-			this.Hide();
+			if (!isListening)
+			{
+				selectionRect = this.Bounds;
+				InitializeCapture();
+				StartListener();
+				this.Hide();
+			}
 		}
+
 
 		private void Form1_Load(object sender, EventArgs e)
 		{
@@ -115,52 +121,101 @@ namespace CounterBabbel
 
 		private void StartListener()
 		{
-			if (listener != null && listener.IsListening)
+			selectionRect = this.Bounds;
+			if (isListening)
 				return; // già in ascolto
 
 			listener = new HttpListener();
 			listener.Prefixes.Add("http://localhost:5000/");
 			listener.Start();
+			isListening = true;
 
 			Task.Run(() =>
 			{
-				while (listener.IsListening)
+				try
 				{
-					var context = listener.GetContext();
-					var response = context.Response;
-
-					try
+					while (listener.IsListening)
 					{
-						UpdateCaptureZone();
+						HttpListenerContext context = null;
+						try
+						{
+							context = listener.GetContext();
+						}
+						catch (HttpListenerException)
+						{
+							// Listener è stato fermato dal thread principale: esci dal ciclo
+							break;
+						}
+						catch (ObjectDisposedException)
+						{
+							// Listener chiuso: esci pure
+							break;
+						}
 
-						var (imageData, width, height) = CaptureScreen();
+						if (context == null)
+							continue;
 
-						string text = ReadOCR(imageData, width, height);
+						var response = context.Response;
 
-						byte[] buffer = System.Text.Encoding.UTF8.GetBytes(text);
-						response.ContentLength64 = buffer.Length;
-						response.OutputStream.Write(buffer, 0, buffer.Length);
+						try
+						{
+							UpdateCaptureZone();
+
+							var (imageData, width, height) = CaptureScreen();
+
+							string text = ReadOCR(imageData, width, height);
+
+							byte[] buffer = System.Text.Encoding.UTF8.GetBytes(text);
+							response.ContentLength64 = buffer.Length;
+							response.OutputStream.Write(buffer, 0, buffer.Length);
+						}
+						catch (Exception ex)
+						{
+							byte[] buffer = System.Text.Encoding.UTF8.GetBytes($"Errore: {ex.Message}");
+							response.ContentLength64 = buffer.Length;
+							response.OutputStream.Write(buffer, 0, buffer.Length);
+						}
+						finally
+						{
+							response.OutputStream.Close();
+						}
 					}
-					catch (Exception ex)
-					{
-						byte[] buffer = System.Text.Encoding.UTF8.GetBytes($"Errore: {ex.Message}");
-						response.ContentLength64 = buffer.Length;
-						response.OutputStream.Write(buffer, 0, buffer.Length);
-					}
-					finally
-					{
-						response.OutputStream.Close();
-					}
+				}
+				catch (Exception)
+				{
 				}
 			});
 		}
 
+
+		private void StopListener()
+		{
+			if (listener != null)
+			{
+				if (listener.IsListening)
+				{
+					listener.Stop();
+				}
+				listener.Close();
+				listener = null;
+			}
+			isListening = false;
+
+			captureZone = null;
+
+			screenCapture?.Dispose();
+			screenCapture = null;
+
+			screenCaptureService?.Dispose();
+			screenCaptureService = null;
+
+			ocrEngine?.Dispose();
+			ocrEngine = null;
+		}
+
+
 		private void UpdateCaptureZone()
 		{
-			if (captureZone != null)
-			{
-				// Liberare captureZone se l'API lo consente.
-			}
 			selectionRect = this.Bounds;
 			captureZone = screenCapture.RegisterCaptureZone(selectionRect.X, selectionRect.Y, selectionRect.Width, selectionRect.Height);
 		}
@@ -232,5 +287,15 @@ namespace CounterBabbel
 
 			return bmp;
 		}
+		
+		private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
+		{
+			if (isListening)
+			{
+				StopListener();
+			}
+			this.Show();
+		}
+
 	}
 }

@@ -1,4 +1,4 @@
-namespace CounterBabbel
+namespace CounterBabbelClient
 {
 	internal static class Program
 	{
